@@ -1,231 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analizador de Ecuaciones</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Derivadas</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@12.4.0/lib/browser/math.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
-    :root {
-      --primary-color: #D32F2F;
-      --secondary-color: #1E1E1E;
-      --accent-color: #FF5252;
-      --text-color: #FFFFFF;
-      --background-color: #121212;
-      --card-bg: #2C2C2C;
-    }
-
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: var(--background-color);
-      color: var(--text-color);
+      background-color: #121212;
+      color: #f0f0f0;
     }
-
-    header {
-      background-color: var(--primary-color);
-      color: white;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 2rem;
     }
-
-    main {
-      max-width: 800px;
-      margin: 30px auto;
-      padding: 20px;
-      background-color: var(--secondary-color);
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    textarea {
+    input, button, textarea {
+      padding: 0.7rem;
+      margin: 0.5rem 0;
       width: 100%;
-      padding: 15px;
-      border: 1px solid #555;
-      border-radius: 8px;
-      font-size: 16px;
-      resize: vertical;
-      background-color: var(--card-bg);
-      color: var(--text-color);
-    }
-
-    button {
-      margin-top: 15px;
-      width: 100%;
-      padding: 15px;
-      background-color: var(--accent-color);
-      color: white;
-      font-size: 16px;
+      border-radius: 5px;
       border: none;
-      border-radius: 8px;
+    }
+    button {
+      background-color: #03dac6;
+      color: #000;
+      font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s;
     }
-
-    button:hover {
-      background-color: #ff6666;
+    .graph {
+      margin-top: 2rem;
     }
-
-    .output {
-      margin-top: 25px;
-      background-color: var(--card-bg);
-      padding: 20px;
-      border-radius: 10px;
-      border-left: 5px solid var(--primary-color);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      white-space: pre-wrap;
+    .section {
+      margin-top: 2rem;
+      background-color: #1f1f1f;
+      padding: 1rem;
+      border-radius: 8px;
     }
-
-    #plot {
-      margin-top: 30px;
-      height: 450px;
+    h2 {
+      color: #bb86fc;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🔍 Analizador de Ecuaciones</h1>
-    <p>Visualiza y comprende tus funciones paso a paso</p>
-  </header>
+  <div class="container">
+    <h1>Calculadora de Derivadas</h1>
+    <p>Introduce una función (por ejemplo: sin(x)*x^2 + ln(x))</p>
+    <input type="text" id="inputFunction" placeholder="f(x) =" />
+    <button onclick="calcularDerivada()">Calcular Derivada</button>
 
-  <main>
-    <label for="input"><strong>Ingresa una función:</strong></label>
-    <p>Ejemplo: <code>x^2 - 4*x + 3</code> o <code>f(x) = x^2 - 4*x + 3</code></p>
-    <textarea id="input" rows="2" placeholder="Escribe aquí tu ecuación..."></textarea>
-    <button onclick="analizarEcuacion()">Analizar Función</button>
-
-    <div id="salida" class="output"></div>
-    <div class="output"><strong>📉 Asíntotas encontradas:</strong>
-      <div id="asintotas"></div>
+    <div class="section">
+      <h2>Método Corto (Automático)</h2>
+      <p id="resultadoCorto"></p>
     </div>
-    <div id="pasos" class="output"></div>
-    <div id="plot"></div>
-  </main>
 
-  <script>
-    function analizarEcuacion() {
-      const input = document.getElementById("input").value;
-      const expr = input.replace(/^f\(x\)\s*=\s*/, '');
-      let scope = {x: 0};
-
-      try {
-        const node = math.parse(expr);
-        const compiled = node.compile();
-
-        const x_vals = math.range(-50, 50, 0.2).toArray();
-        const y_vals = x_vals.map(x => {
-          scope.x = x;
-          try {
-            return compiled.evaluate(scope);
-          } catch {
-            return NaN;
-          }
-        });
-
-        let salida = `📘 Expresión ingresada: f(x) = ${expr}\n`;
-        salida += `📌 Dominio: Aproximadamente todos los reales, excepto donde la función no está definida (divisiones por cero o raíces de números negativos)\n`;
-
-        const simplified = math.simplify(expr);
-        salida += `🧮 Forma simplificada: ${simplified.toString()}\n`;
-
-        const finiteY = y_vals.filter(y => !isNaN(y) && isFinite(y));
-        const minY = Math.min(...finiteY);
-        const maxY = Math.max(...finiteY);
-        salida += `📈 Rango aproximado: [${minY.toFixed(2)}, ${maxY.toFixed(2)}]\n`;
-
-        let asintotasText = '';
-        let trazosAsintotas = [];
-
-        // Asíntotas verticales
-        if (expr.includes('/')) {
-          const partes = expr.split('/');
-          const denominador = partes[1];
-          try {
-            const soluciones = math.solve(denominador, 'x');
-            if (Array.isArray(soluciones)) {
-              soluciones.forEach(v => {
-                asintotasText += `• Vertical: x = ${v}\n`;
-                trazosAsintotas.push({
-                  type: 'line',
-                  x0: v, x1: v,
-                  y0: minY, y1: maxY,
-                  line: {
-                    color: 'white',
-                    width: 2,
-                    dash: 'dashdot'
-                  }
-                });
-              });
-            }
-          } catch (e) {
-            asintotasText += `⚠️ No se pudo determinar asíntotas verticales con precisión.\n`;
-          }
-
-          // Asíntota horizontal
-          try {
-            const num = math.simplify(partes[0]);
-            const den = math.simplify(partes[1]);
-            const degNum = num.filter(node => node.isSymbolNode && node.name === 'x').length;
-            const degDen = den.filter(node => node.isSymbolNode && node.name === 'x').length;
-
-            if (degNum < degDen) {
-              asintotasText += `• Horizontal: y = 0\n`;
-              trazosAsintotas.push({
-                type: 'line',
-                x0: -50, x1: 50,
-                y0: 0, y1: 0,
-                line: {
-                  color: 'white',
-                  width: 2,
-                  dash: 'dashdot'
-                }
-              });
-            }
-          } catch {}
-        }
-
-        document.getElementById("salida").innerText = salida;
-        document.getElementById("asintotas").innerText = asintotasText;
-
-        let pasos = `🔎 Desarrollo paso a paso:\n`;
-        pasos += `1. Expresión original: f(x) = ${expr}\n`;
-        pasos += `2. Simplificación algebraica: ${simplified.toString()}\n`;
-        pasos += `3. Se detecta tipo de función: ${expr.includes('/') ? 'racional' : 'polinómica'}\n`;
-        pasos += `4. Se evalúa en varios valores para obtener el comportamiento de la gráfica.\n`;
-        pasos += `5. Dominio identificado excluyendo divisiones por 0.\n`;
-        pasos += `6. Se identifican asíntotas verticales y horizontales (si aplica).\n`;
-        pasos += `7. Se genera gráfica para observar el comportamiento de la función.\n`;
-
-        document.getElementById("pasos").innerText = pasos;
-
-        Plotly.newPlot("plot", [
-          {
-            x: x_vals,
-            y: y_vals,
-            type: 'scatter',
-            mode: 'lines',
-            name: 'f(x)',
-            line: { color: '#FF5252', width: 3 }
-          }
-        ], {
-          title: `Gráfica de f(x)`,
-          margin: { t: 40 },
-          paper_bgcolor: '#1E1E1E',
-          plot_bgcolor: '#2C2C2C',
-          font: { color: '#FFFFFF' },
-          shapes: trazosAsintotas
-        });
-
-      } catch (err) {
-        document.getElementById("salida").innerText = `❌ Error al analizar la ecuación: ${err.message}`;
-        document.getElementById("asintotas").innerText = '';
-        document.getElementById("pasos").innerText = '';
-        Plotly.purge("plot");
-      }
-    }
-  </script>
-</body>
-</html>
+    <div class="section">
+      <h2>Método Largo (Paso a Paso - Límite de la definición)</h2>
+      <div id="resultadoLargo">
