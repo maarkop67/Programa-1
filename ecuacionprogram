@@ -4,60 +4,151 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calculadora de Derivadas</title>
-  <script src="https://cdn.jsdelivr.net/npm/mathjs@12.4.0/lib/browser/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/algebrite/1.5.0/algebrite.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #121212;
-      color: #f0f0f0;
+      background-color: #1e1e1e;
+      color: #fff;
     }
     .container {
+      padding: 2rem;
       max-width: 1000px;
       margin: auto;
-      padding: 2rem;
     }
     input, button, textarea {
-      padding: 0.7rem;
+      padding: 0.5rem;
       margin: 0.5rem 0;
       width: 100%;
       border-radius: 5px;
       border: none;
     }
+    input, textarea {
+      background-color: #2e2e2e;
+      color: #fff;
+    }
     button {
-      background-color: #03dac6;
-      color: #000;
-      font-weight: bold;
+      background-color: #4caf50;
+      color: white;
       cursor: pointer;
     }
-    .graph {
-      margin-top: 2rem;
+    button:hover {
+      background-color: #45a049;
+    }
+    #plot {
+      height: 500px;
     }
     .section {
       margin-top: 2rem;
-      background-color: #1f1f1f;
-      padding: 1rem;
-      border-radius: 8px;
     }
-    h2 {
-      color: #bb86fc;
+    .explanation {
+      background-color: #2e2e2e;
+      padding: 1rem;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Calculadora de Derivadas</h1>
-    <p>Introduce una función (por ejemplo: sin(x)*x^2 + ln(x))</p>
-    <input type="text" id="inputFunction" placeholder="f(x) =" />
-    <button onclick="calcularDerivada()">Calcular Derivada</button>
+    <h1>Calculadora Interactiva de Derivadas</h1>
+    <p>Ingresa una función f(x):</p>
+    <input type="text" id="funcion" placeholder="Ej: sin(x) + x^2" />
+    <button onclick="procesarFuncion()">Calcular derivada</button>
 
     <div class="section">
-      <h2>Método Corto (Automático)</h2>
-      <p id="resultadoCorto"></p>
+      <h2>Derivación - Método Corto</h2>
+      <div id="derivada-corta"></div>
     </div>
 
     <div class="section">
-      <h2>Método Largo (Paso a Paso - Límite de la definición)</h2>
-      <div id="resultadoLargo">
+      <h2>Derivación - Método Largo</h2>
+      <div id="derivada-larga"></div>
+    </div>
+
+    <div class="section">
+      <h2>Gráfica de la Función y su Derivada</h2>
+      <div id="plot"></div>
+    </div>
+
+    <div class="section">
+      <h2>Análisis de la Derivada</h2>
+      <div id="analisis"></div>
+    </div>
+
+    <div class="section explanation">
+      <h2>¿Qué es una Derivada?</h2>
+      <p>Una derivada representa la tasa de cambio instantánea de una función respecto a una variable. Gráficamente, es la pendiente de la recta tangente en un punto.</p>
+    </div>
+  </div>
+
+  <script>
+    function procesarFuncion() {
+      const input = document.getElementById("funcion").value;
+      let derivada;
+      try {
+        derivada = Algebrite.run("derivative(" + input + ")");
+        document.getElementById("derivada-corta").innerText = "f'(x) = " + derivada;
+
+        document.getElementById("derivada-larga").innerText = "Desarrollo manual (reglas aplicadas):\n- La potencia, producto, cociente o cadena depende del tipo de función.\n- Ejemplo visual no disponible aún.\n- Esta sección será ampliada próximamente.";
+
+        graficar(input, derivada);
+        analizarDerivada(input, derivada);
+      } catch (err) {
+        alert("Error al procesar la función. Verifica la sintaxis.");
+      }
+    }
+
+    function graficar(funcion, derivada) {
+      let x = [], y1 = [], y2 = [];
+      for (let i = -10; i <= 10; i += 0.1) {
+        x.push(i);
+        try {
+          const scope = { x: i };
+          y1.push(math.evaluate(funcion, scope));
+          y2.push(math.evaluate(derivada, scope));
+        } catch (err) {
+          y1.push(null);
+          y2.push(null);
+        }
+      }
+      Plotly.newPlot("plot", [
+        {
+          x: x,
+          y: y1,
+          name: "f(x)",
+          type: "scatter",
+          mode: "lines"
+        },
+        {
+          x: x,
+          y: y2,
+          name: "f'(x)",
+          type: "scatter",
+          mode: "lines"
+        }
+      ], {
+        title: "Función Original y su Derivada",
+        xaxis: { title: "x" },
+        yaxis: { title: "y" },
+        responsive: true
+      });
+    }
+
+    function analizarDerivada(funcion, derivada) {
+      let info = "<ul>";
+      info += "<li>Puntos críticos: Donde f'(x) = 0 o no existe.</li>";
+      info += "<li>Máximos y mínimos: Dependen del cambio de signo de f'(x).</li>";
+      info += "<li>Crecimiento: f'(x) > 0.</li>";
+      info += "<li>Decrecimiento: f'(x) < 0.</li>";
+      info += "<li>Concavidad y puntos de inflexión requieren f''(x).</li>";
+      info += "</ul>";
+      info += "(El análisis automático detallado estará disponible en futuras versiones).";
+      document.getElementById("analisis").innerHTML = info;
+    }
+  </script>
+</body>
+</html>
